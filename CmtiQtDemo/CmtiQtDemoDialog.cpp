@@ -20,6 +20,7 @@ CmtiQtDemoDialog::CmtiQtDemoDialog(QWidget *parent)
     connect(ui.btnLoadSettingFile, &QPushButton::clicked, this, &CmtiQtDemoDialog::btnLoadSettingFile_clicked);
     connect(ui.btnOpen, &QPushButton::clicked, this, &CmtiQtDemoDialog::btnOpen_clicked);
     connect(ui.btnClose, &QPushButton::clicked, this, &CmtiQtDemoDialog::btnClose_clicked);
+    connect(ui.btnTest, &QPushButton::clicked, this, &CmtiQtDemoDialog::btnTest_clicked);
 }
 
 CmtiQtDemoDialog::~CmtiQtDemoDialog()
@@ -128,6 +129,24 @@ void CmtiQtDemoDialog::btnClose_clicked()
             return;
         }
         writeLog(QString("Closed(%1).").arg(nSocketIndex), LogLevel_Info);
+    }
+}
+
+void CmtiQtDemoDialog::btnTest_clicked()
+{
+    QList<QTableWidgetItem*> items = ui.tableWidgetDevice->selectedItems();
+    if (items.size() == ui.tableWidgetDevice->columnCount()) // select a row
+    {
+        int nSocketIndex = items[0]->data(Qt::EditRole).toInt();
+        QString qsDevName = items[1]->text();
+        writeLog(QString("Bind...(%1, %2)").arg(nSocketIndex).arg(qsDevName), LogLevel_Info);
+        m_pCztekBoard->BindSocket(nSocketIndex, qsDevName);
+        uint8_t pData[2];
+        bool bFlag = m_pCztekBoard->ReadI2CData(nSocketIndex, 0x20, 0x0016, 2, pData, true); // 尝试读imx214的flag寄存器
+        if (bFlag)
+        {
+            writeLog(QString("RegAddr: 0x0016, RegData(2B): 0x%2 0x%3").arg(pData[0], 2, 16, QChar('0')).arg(pData[1], 2, 16, QChar('0')));
+        }
     }
 }
 

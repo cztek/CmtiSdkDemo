@@ -162,6 +162,9 @@ public:
     bool fnStandbyOffset(int nSocIndex, QList<float>& reading);
 
 private:
+    bool enterStandbyMode(int nSocIndex);
+
+private:
      TSensorSetting* m_pSensorSetting;
      bool m_bIsPowerOn{ false };
      bool m_bIsVideoOn{ false };

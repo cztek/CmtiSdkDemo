@@ -19,6 +19,7 @@ private:
     void btnLoadSettingFile_clicked();
     void btnOpen_clicked();
     void btnClose_clicked();
+    void btnTest_clicked();
     void pGrabThread_frameGrabbed(const uint8_t* pBuffer, int nBufferLen, uint64_t headTimestamp, uint64_t tailTimestamp, uint32_t frameSequence);
 
 private:

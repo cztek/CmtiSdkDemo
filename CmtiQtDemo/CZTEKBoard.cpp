@@ -1,5 +1,9 @@
 ﻿#include "CZTEKBoard.h"
 #include <memory>
+#include <QDebug>
+#include <QFileInfo>
+#include <QDir>
+#include <thread>
 #include "SensorSettingProvider.h"
 #include "CmtiSdkWrapper.h"
 
@@ -194,14 +198,31 @@ bool CZTEKBoard::fnGetOneFrame(int nSocIndex, QString station, QString barcode, 
     DeviceClient* devCli = DeviceController::Instance()[nSocIndex];
     if (devCli == nullptr)
         return false;
-    int nBufferLen = 120; // todo
+    uint32_t imgFmt = 0, imgMode = 0, width = 0, height = 0, size = 0;
+    devCli->GetFrameParam(imgFmt, imgMode, width, height, size);
+    int nBufferLen = size;
     std::unique_ptr<uint8_t[]> pBuffer(new uint8_t[nBufferLen]());
     uint64_t headTimestamp, tailTimestamp;
     uint32_t frameSequence;
     int ec = devCli->GrabFrame2(pBuffer.get(), nBufferLen, headTimestamp, tailTimestamp, frameSequence);
     if (ERR_NoError == ec)
     {
-        // save to file
+        QFileInfo fileInfo(QDir(QString::fromStdString(FilePath)), QString::fromStdString(fileName));
+        QString qsFilePathName = fileInfo.absoluteFilePath();
+        QFile binFile(qsFilePathName);
+        if (!binFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
+        {
+            qCritical().noquote() << QObject::tr("Open file %1 failed.").arg(qsFilePathName);
+            return false;
+        }
+        if (nBufferLen != binFile.write((const char*)pBuffer.get(), nBufferLen))
+        {
+            qCritical().noquote() << QObject::tr("Write file %1 failed.").arg(qsFilePathName);
+            binFile.close();
+            return false;
+        }
+        binFile.close();
+        return true;
     }
     return false;
 }
@@ -213,7 +234,7 @@ bool CZTEKBoard::ReadI2CData(int nSocIndex, ushort nSlave, ushort nAddr, ushort 
         return false;
 
     T_I2CCommParam& i2cParam = m_pSensorSetting->I2cParam;
-    int ec = devCli->ReadContinuousI2c(nSlave, i2cParam.Speed, nAddr, bAddr16 ? 2 : 1, pBuf, nDataLen);
+    int ec = devCli->ReadContinuousI2c(nSlave, i2cParam.Speed * 100, nAddr, bAddr16 ? 2 : 1, pBuf, nDataLen);
 
     return (ERR_NoError == ec);
 }
@@ -225,7 +246,7 @@ bool CZTEKBoard::WriteI2CData(int nSocIndex, ushort nSlave, ushort nAddr, ushort
         return false;
     
     T_I2CCommParam& i2cParam = m_pSensorSetting->I2cParam;
-    int ec = devCli->WriteContinuousI2c(nSlave, i2cParam.Speed, nAddr, bAddr16 ? 2 : 1, pBuf, nDataLen);
+    int ec = devCli->WriteContinuousI2c(nSlave, i2cParam.Speed * 100, nAddr, bAddr16 ? 2 : 1, pBuf, nDataLen);
 
     return (ERR_NoError == ec);
 }
@@ -399,6 +420,7 @@ bool CZTEKBoard::fnDynamicOffset(int nSocIndex, QList<float>& reading)
     DeviceClient* devCli = DeviceController::Instance()[nSocIndex];
     if (devCli == nullptr)
         return false;
+
     return false;
 }
 
@@ -408,7 +430,10 @@ bool CZTEKBoard::fnStandbyReading(int nSocIndex, QList<float>& reading)
     if (devCli == nullptr)
         return false;
 
-    // todo: 静态电流状态
+    // 进入静态状态
+    bool bFlag = enterStandbyMode(nSocIndex);
+    if (!bFlag)
+        return bFlag;
 
     // 读电流
     int count = m_pSensorSetting->PowerCount;
@@ -440,5 +465,45 @@ bool CZTEKBoard::fnStandbyOffset(int nSocIndex, QList<float>& reading)
     DeviceClient* devCli = DeviceController::Instance()[nSocIndex];
     if (devCli == nullptr)
         return false;
+
+    // 进入静态状态
+    bool bFlag = enterStandbyMode(nSocIndex);
+    if (!bFlag)
+        return bFlag;
+
+    // 读Offset
+
     return false;
+}
+
+bool CZTEKBoard::enterStandbyMode(int nSocIndex)
+{
+    DeviceClient* devCli = DeviceController::Instance()[nSocIndex];
+    if (devCli == nullptr)
+        return false;
+
+    // 这里使用硬件方式进入Standby状态，有些模组可能使用写寄存器方式进入
+    uint16_t pinLevel = 0; // (m_pOption->m_iPwdnStatus == 1) ? IO_Pwdn1 : 0;
+    int ec = devCli->SetSensorGpioPinLevel(IO_Pwdn1, pinLevel);
+    if (ec < 0)
+    {
+        return false;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
+    pinLevel = IO_Reset; // (m_pOption->m_iResetStatus == 1) ? IO_Reset : 0;
+    ec = devCli->SetSensorGpioPinLevel(IO_Reset, pinLevel);
+    if (ec < 0)
+    {
+        return false;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
+    ec = devCli->SetSensorClock(0);
+    if (ec < 0)
+    {
+        return false;
+    }
+
+    return true;
 }
