@@ -4,6 +4,7 @@
 #include <QFileInfo>
 #include <QDir>
 #include <thread>
+#include <QtEndian>
 #include "SensorSettingProvider.h"
 #include "CmtiSdkWrapper.h"
 
@@ -187,10 +188,40 @@ bool CZTEKBoard::fnCanyouPowerOff(int nSocIndex)
 
 void CZTEKBoard::Make10BitModeLSB(unsigned char* pImage, uint16_t* pDest, unsigned int nWidth, unsigned int nHeight)
 {
+    // 按行处理
+    const int srcRowBytes = nWidth / 4 * 5; // 5 bytes per 4 pixels
+    for (int rowIdx = 0; rowIdx < nHeight; rowIdx++)
+    {
+        const uint8_t* pSrcRow = pImage + srcRowBytes * rowIdx;
+        uint16_t* pDestRow = pDest + nWidth * rowIdx;
+
+        for (int b = 0, k = 0; b < srcRowBytes; b += 5, k += 4) // 每次处理4个像素5个字节
+        {
+            pDestRow[k + 0] = ((uint16_t)pSrcRow[b + 0] << 2) | (pSrcRow[b + 4] >> 6 & 0x03);
+            pDestRow[k + 1] = ((uint16_t)pSrcRow[b + 1] << 2) | (pSrcRow[b + 4] >> 4 & 0x03);
+            pDestRow[k + 2] = ((uint16_t)pSrcRow[b + 2] << 2) | (pSrcRow[b + 4] >> 2 & 0x03);
+            pDestRow[k + 3] = ((uint16_t)pSrcRow[b + 3] << 2) | (pSrcRow[b + 4] & 0x03);
+        }
+    };
 }
 
 void CZTEKBoard::Make10BitModeMSB(unsigned char* pImage, uint16_t* pDest, unsigned int nWidth, unsigned int nHeight)
 {
+    // 按行处理
+    const int srcRowBytes = nWidth / 4 * 5; // 5 bytes per 4 pixels
+    for (int rowIdx = 0; rowIdx < nHeight; rowIdx++)
+    {
+        const uint8_t* pSrcRow = pImage + srcRowBytes * rowIdx;
+        uint16_t* pDestRow = pDest + nWidth * rowIdx;
+
+        for (int b = 0, k = 0; b < srcRowBytes; b += 5, k += 4) // 每次处理4个像素5个字节
+        {
+            pDestRow[k + 0] = qToBigEndian<uint16_t>(((uint16_t)pSrcRow[b + 0] << 2) | (pSrcRow[b + 4] >> 6 & 0x03));
+            pDestRow[k + 1] = qToBigEndian<uint16_t>(((uint16_t)pSrcRow[b + 1] << 2) | (pSrcRow[b + 4] >> 4 & 0x03));
+            pDestRow[k + 2] = qToBigEndian<uint16_t>(((uint16_t)pSrcRow[b + 2] << 2) | (pSrcRow[b + 4] >> 2 & 0x03));
+            pDestRow[k + 3] = qToBigEndian<uint16_t>(((uint16_t)pSrcRow[b + 3] << 2) | (pSrcRow[b + 4] & 0x03));
+        }
+    };
 }
 
 bool CZTEKBoard::fnGetOneFrame(int nSocIndex, QString station, QString barcode, std::string FilePath, std::string fileName)

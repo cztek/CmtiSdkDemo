@@ -56,7 +56,7 @@ public:
     /**
     * @brief 将模组 mipi 输出的10bit 图片，转换为16bit 大端
     *
-    * @param pImage[] 10bit原始图数据输入
+    * @param pImage[] 10bit原始图数据输入(4像素5字节)
     * @param pDest[] 转换后结果
     * @param nWidth 图片宽度
     * @param nHeight 图片高度
@@ -67,7 +67,7 @@ public:
     /**
     * @brief 将模组 mipi 输出的10bit 图片，转换为16bit 小端
     *
-    * @param pImage[] 10bit原始图数据输入
+    * @param pImage[] 10bit原始图数据输入(4像素5字节)
     * @param pDest[] 转换后结果
     * @param nWidth 图片宽度
     * @param nHeight 图片高度
