@@ -119,6 +119,13 @@
          </widget>
         </item>
         <item>
+         <widget class="QPushButton" name="btnReadCurrentCaliOffset">
+          <property name="text">
+           <string>Read Current Cali Offset</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QPushButton" name="btnTest">
           <property name="text">
            <string>Test</string>

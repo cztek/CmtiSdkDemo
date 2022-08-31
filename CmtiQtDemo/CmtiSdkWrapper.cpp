@@ -171,6 +171,11 @@ int DeviceClient::ProbeI2cAddress(uint8_t u8I2cAddr[], int& nCount)
     return CmtiSdk::Cmti_SearchI2cAddress(m_hDevClient, u8I2cAddr, &nCount);
 }
 
+int DeviceClient::GetBoardInfo(T_BoardInfo& boardInfo)
+{
+    return CmtiSdk::Cmti_GetBoardInfo(m_hDevClient, &boardInfo);
+}
+
 int DeviceClient::WriteSingleI2c(uint32_t i2cAddr, uint32_t speedkHz, uint32_t mode, uint32_t regAddr, uint32_t regData)
 {
     return CmtiSdk::Cmti_WriteSingleI2c(m_hDevClient, i2cAddr, speedkHz, mode, regAddr, regData);
@@ -500,6 +505,12 @@ int DeviceClient::GetCurrent(const uint32_t powerId[], const uint32_t currentRan
 int DeviceClient::GetCurrentV2(const int powerIds[], const int upperLimit[], const uint16 atuoHighPrecision[], float current_nA[], int count)
 {
     return CmtiSdk::Cmti_GetCurrentV2(m_hDevClient, powerIds, upperLimit, atuoHighPrecision, current_nA, count);
+}
+
+int DeviceClient::ReadCurrentCalibrationOffset(const uint32_t powerId[], const uint32_t voltage_mV[], const uint32_t delay_ms[], uint32_t nPowerCount,
+            int nCurrent_nA[], int& nCurrentCount)
+{
+    return CmtiSdk::Cmti_ReadCurrentCalibrationOffset(m_hDevClient, powerId, voltage_mV, delay_ms, nPowerCount, nCurrent_nA, &nCurrentCount);
 }
 
 int DeviceClient::SetOvercurrentParam(const int powerId[], const int currentThrd_mA[], const int debounceInterval_ms[], int count)

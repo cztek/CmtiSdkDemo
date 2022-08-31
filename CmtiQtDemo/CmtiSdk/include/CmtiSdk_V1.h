@@ -350,8 +350,8 @@ public:
      * @param timestamp 时间戳
      * @return int 错误码
      */
-    virtual int GrabFrame(uint chnIdx, uint8_t *pbuffer, int bufferLen, uint64 &timestamp) = 0;
-    virtual int GrabLatestFrame(uint chnIdx, uint8_t *pbuffer, int bufferLen, uint64 &timestamp) = 0;
+    virtual int GrabFrame(uint chnIdx, uint8_t *pbuffer, int bufferLen, uint64_t &timestamp) = 0;
+    virtual int GrabLatestFrame(uint chnIdx, uint8_t *pbuffer, int bufferLen, uint64_t &timestamp) = 0;
     /**
      * @brief 从队列中取出一个Buffer(与EnqueueFrameBuffer配对使用)，使用缓冲池中的缓冲区，无需要用户分配内存
      *
@@ -361,8 +361,8 @@ public:
      * @param timestamp 时间戳
      * @return int 错误码
      */
-    virtual int DequeueFrameBuffer(uint chnIdx, int &bufIdx, uint8_t* &pbuffer, uint64 &timestamp) = 0;
-    virtual int DequeueLatestFrameBuffer(uint chnIdx, int &bufIdx, uint8_t* &pbuffer, uint64 &timestamp) = 0;
+    virtual int DequeueFrameBuffer(uint chnIdx, int &bufIdx, uint8_t* &pbuffer, uint64_t &timestamp) = 0;
+    virtual int DequeueLatestFrameBuffer(uint chnIdx, int &bufIdx, uint8_t* &pbuffer, uint64_t &timestamp) = 0;
     /**
      * @brief 入队一个Buffer(与DequeueFrameBuffer配对使用)
      *

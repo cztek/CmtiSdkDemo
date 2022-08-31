@@ -3,26 +3,30 @@
 
 #include "TypeDefs.h"
 
+/**
+ * @ingroup Sensor控制接口
+ * @brief 电源Pin的ID
+*/
 enum E_PowerId
 {
     // old name style
-    PI_DVDD = 0,
-    PI_AVDD = 1,
-    PI_DOVDD = 2,
-    PI_AFVCC = 3,
-    PI_VPP = 4,
-    PI_AVDD2 = 5,
+    PI_DVDD = 0,    /**< Deprecated */
+    PI_AVDD = 1,    /**< Deprecated */
+    PI_DOVDD = 2,   /**< Deprecated */
+    PI_AFVCC = 3,   /**< Deprecated */
+    PI_VPP = 4,     /**< Deprecated */
+    PI_AVDD2 = 5,   /**< Deprecated */
     PowerId_MaxPowerCount,
 	
     // new name style
-    Power_DVDD = 0,
-    Power_AVDD = 1,
-    Power_DOVDD = 2,
-    Power_AFVCC = 3,
-    Power_VPP = 4,
-    Power_AVDD2 = 5,
-    Power_VOIS = 6,
-    Power_VAUX = 7,
+    Power_DVDD = 0,  /**< DVDD */
+    Power_AVDD = 1,  /**< AVDD */
+    Power_DOVDD = 2, /**< DOVDD */
+    Power_AFVCC = 3, /**< AFVCC */
+    Power_VPP = 4,   /**< VPP */
+    Power_AVDD2 = 5, /**< AVDD2 */
+    Power_VOIS = 6,  /**< VOIS */
+    Power_VAUX = 7,  /**< VAUX */
     Power_MaxPowerCount,
 };
 
@@ -100,25 +104,30 @@ enum E_InterfaceType
 
 #define I2C_READ_NO_STOP    0x80
 
+/**
+ * @ingroup Sensor控制接口
+ * @brief 寄存器读写模式
+*/
 enum E_RegBitsMode
 {
     // old name
-    RB_NORMAL = 0,            // 8Addr,8Data
-    RB_ADDR8_DATA8 = 1,       // 8Addr,8Data
-    RB_ADDR8_DATA16 = 2,      // 8Addr,16Data
-    RB_ADDR16_DATA8 = 3,      // 16Addr,8Data
-    RB_ADDR16_DATA16 = 4,     // 16Addr,16Data
+    RB_NORMAL = 0,            /**< Deprecated */
+    RB_ADDR8_DATA8 = 1,       /**< Deprecated */
+    RB_ADDR8_DATA16 = 2,      /**< Deprecated */
+    RB_ADDR16_DATA8 = 3,      /**< Deprecated */
+    RB_ADDR16_DATA16 = 4,     /**< Deprecated */
     // new name
-    RegMode_Normal = 0,          // 8Addr,8Data
-    RegMode_ADDR8_DATA8 = 1,     // 8Addr,8Data
-    RegMode_ADDR8_DATA16 = 2,    // 8Addr,16Data
-    RegMode_ADDR16_DATA8 = 3,    // 16Addr,8Data
-    RegMode_ADDR16_DATA16 = 4,   // 16Addr,16Data
-    RegMode_ADDR0_DATA8 = 5,     // 0Addr,8Data
-    RegMode_ADDR0_DATA16 = 6,    // 0Addr,16Data 
-    RegMode_ADDR0_DATA32 = 7,    // 0Addr,32Data
-    RegMode_ADDR8_DATA32 = 8,    // 8Addr,32Data
-    RegMode_ADDR16_DATA32 = 9,   // 16Addr,32Data
+
+    RegMode_Normal = 0,          /**<  8位地址， 8位值 */
+    RegMode_ADDR8_DATA8 = 1,     /**<  8位地址， 8位值 */
+    RegMode_ADDR8_DATA16 = 2,    /**<  8位地址，16位值 */
+    RegMode_ADDR16_DATA8 = 3,    /**< 16位地址， 8位值 */
+    RegMode_ADDR16_DATA16 = 4,   /**< 16位地址，16位值 */
+    RegMode_ADDR0_DATA8 = 5,     /**<  0位地址， 8位值 */
+    RegMode_ADDR0_DATA16 = 6,    /**<  0位地址，16位值  */
+    RegMode_ADDR0_DATA32 = 7,    /**<  0位地址，32位值 */
+    RegMode_ADDR8_DATA32 = 8,    /**<  8位地址，32位值 */
+    RegMode_ADDR16_DATA32 = 9,   /**< 16位地址，32位值 */
 };
 
 struct T_I2CCommParam
@@ -160,7 +169,9 @@ struct T_RegConf
     }
 };
 
-// SPI
+/**
+ * @brief SPI
+*/
 enum E_SpiId
 {
     E_Spi_Id_Camera = 0x00,
@@ -218,9 +229,10 @@ enum E_ImageFormat
     ImgFmt_YUV422 = 8,
     ImgFmt_YUV420 = 9,
     ImgFmt_LUMINANCE = 10,
-    ImgFmt_PackedRaw10 = 11, // packed
-    ImgFmt_PackedRaw12 = 12, // packed
-    ImgFmt_PackedRaw14 = 13, // packed
+    ImgFmt_PackedRaw10 = 11,  // packed(obsoleted)
+    ImgFmt_PackedRaw12 = 12,  // packed
+    ImgFmt_PackedRaw14 = 13,  // packed
+    ImgFmt_Raw10Std4P5B = 14, // MIPI standard 4 pixel 5 bytes
 };
 
 enum E_ImageMode
@@ -368,67 +380,94 @@ enum E_PmicSwitchMode {
     PmicSwitchMode_APS = 2,
 };
 
+struct T_BoardInfo
+{
+    uint32_t Version;       // struct version
+    uint32_t MainBoardId;
+    uint32_t CurrentBoardId;
+    uint32_t PowerDomainsNum; // PowerDomainsNum表示最大电源编号，如统计电源数量时需要加1
+    uint32_t CameraSwap;
+    uint32_t MainboardHardWareVer;
+    uint32_t CurrentBoardHardWareVer;
+    char DtbModel[32];
+
+    // 从PlatformId成员开始要保证占用32个int型数据保证向下兼容,并且新增加的成员有效值不为0
+    uint32_t PlatformId;                    // 该字段在应用层填充使用E_PlatFormId
+    uint32_t CurrentConvertMode;            // V2 版本添加 使用E_CurrentConvertMode
+    uint32_t SupportAutoSelectCurrentRange; // V2 版本添加 板子是否支持根据输入电流上限自动选择量程
+    uint32_t SupportNegativeOsTest;         // V2 版本添加 板子是否支持反向测试OS
+    uint32_t SupportMeasureSensorPower;     // V2 版本添加 板子是否支持测量sensor供电电压
+    uint32_t SupportSetFrameInterVal;       // 驱动是否支持设置帧间隔
+    uint32_t Feature;                       // 硬件支持的特性，为了节省空间按bit设置
+    uint32_t PowerIdBit;                    // 硬件支持的电源Id bit位
+    uint32_t Reserved[24];                  // filled with 0
+};
+
+/**
+ * @ingroup 设备控制接口
+ * @brief 错误码
+*/
 enum E_ErrorCode
 {
-    ERR_NoError = 0,
-    ERR_Continue = 1,
+    ERR_NoError = 0,            /**< 操作成功 */
+    ERR_Continue = 1,           /**< 操作继续 */
     // General Error Code
-    ERR_Failed = -1,           /* General error */
-    ERR_NotImplemented = -2,   /* Not implemented function */
-    ERR_InvalidParameter = -3, /* Invalid parameter */
-    ERR_NoMemory = -4,
-    ERR_FileNotFound = -5,
-    ERR_LoadLibrary = -6,
-    ERR_NotSupported = -7,
-    ERR_Unkown = -9999,        /* Unkown error */
+    ERR_Failed = -1,            /**< 通用错误 */
+    ERR_NotImplemented = -2,    /**< 功能未实现 */
+    ERR_InvalidParameter = -3,  /**< 参数非法 */
+    ERR_NoMemory = -4,          /**< 内存不足 */
+    ERR_FileNotFound = -5,      /**< 文件不存在 */
+    ERR_LoadLibrary = -6,       /**< 加载动态库失败 */
+    ERR_NotSupported = -7,      /**< 功能不支持 */
+    ERR_Unkown = -9999,         /**< 未知错误 */
     // SDK Error Code(from -20 to -100)
-    ERR_SetMclk = -20,
-    ERR_GetMclk = -21,
-    ERR_SetGpio = -22,
-    ERR_GetGpio = -23,
-    ERR_SetGpioDir = -24,
-    ERR_GetGpioDir = -25,
-    ERR_SetMipiParam = -26,
-    ERR_GetMipiParam = -27,
-    ERR_SetFramParam = -28,
-    ERR_GetFramParam = -29,
-    ERR_SetSensorPower = -30,
-    ERR_GetSensorPower = -31,
-    ERR_I2cWrite = -32,
-    ERR_I2cRead = -33,
-    ERR_I2cWriteBlock = -34,
-    ERR_I2cReadBlock = -35,
-    ERR_StartVideo = -36,
-    ERR_StopVideo = -37,
-    ERR_OpenDriver = -38,
-    ERR_WriteControlChannelParam = -39, /* write control channel parameter fail */
-    ERR_ReadControlChannelParam = -40,  /* read control channel parameter fail */
-    ERR_WriteMessageChannelParam = -41, /* write message channel parameter fail */
-    ERR_ReadMessageChannelParam = -42,  /* read message channel parameter fail */
-    ERR_WriteStreamChannelParam = -43,  /* write stream channel parameter fail */
-    ERR_ReadStreamChannelParam = -44,   /* read stream channel parameter fail */
-    ERR_StartTransmit = -45,
-    ERR_StopTransmit = -46,
-    ERR_OpenShortTest = -47,
-    ERR_ReadCurrent = -48,
-    ERR_Overcurrent = -49,
-    ERR_Beep = -50,
-    ERR_VideoDequeuTimeout = -51,
-    ERR_EmptyBufferPool = -52,
-    ERR_DeviceOffline = -53,
-    ERR_SetSpiParameter = -54,
-    ERR_SpiTransfer = -55,
-    ERR_ConnectFailed = -56,
-    ERR_SocketIO = -57,          /* Socket error, socket write/read */
-    ERR_InvalidProtPacket = -58, /* Invalid protocol packet */
-    ERR_SetExtendPower = -59,
-    ERR_VideoNoDevice = -60,
-    ERR_VideoCritical = -61,
-    ERR_SetVideoParam = -62,
-    ERR_Hardware = -63,
-    ERR_CreatAsyncThreadFailed = -64,
-    ERR_AsyncStateError = -65,
-    ERR_Firmware = -100,         /* Firmware error */
+    ERR_SetMclk = -20,          /**< 设置时钟失败 */
+    ERR_GetMclk = -21,          /**< 获取时钟失败 */
+    ERR_SetGpio = -22,          /**< 设置GPIO电平失败 */
+    ERR_GetGpio = -23,          /**< 读取GPIO电平失败 */
+    ERR_SetGpioDir = -24,       /**< 设置GPIO方向失败 */
+    ERR_GetGpioDir = -25,       /**< 读取GPIO方向失败 */
+    ERR_SetMipiParam = -26,     /**< 设置MIPI参数失败 */
+    ERR_GetMipiParam = -27,     /**< 读取MIPI参数失败 */
+    ERR_SetFramParam = -28,     /**< 设置图像参数失败 */
+    ERR_GetFramParam = -29,     /**< 读取图像参数失败 */
+    ERR_SetSensorPower = -30,   /**< 设置引脚电源参数失败 */
+    ERR_GetSensorPower = -31,   /**< 读取引脚电源参数失败 */
+    ERR_I2cWrite = -32,         /**< I2C写失败 */
+    ERR_I2cRead = -33,          /**< I2C读失败 */
+    ERR_I2cWriteBlock = -34,    /**< 连续I2C写失败 */
+    ERR_I2cReadBlock = -35,     /**< 连续I2C读失败 */
+    ERR_StartVideo = -36,       /**< 开图失败 */
+    ERR_StopVideo = -37,        /**< 关图失败 */
+    ERR_OpenDriver = -38,       /**< 性能驱动失败 */
+    ERR_WriteControlChannelParam = -39, /**< 设置控制接口参数失败 */ //no use
+    ERR_ReadControlChannelParam = -40,  /**< 读取控制接口参数失败 */  //no use
+    ERR_WriteMessageChannelParam = -41, /**< 设置通信接口参数失败 */
+    ERR_ReadMessageChannelParam = -42,  /**< 读取通信接口参数失败 */  //no use
+    ERR_WriteStreamChannelParam = -43,  /**< 设置传输接口参数失败 */
+    ERR_ReadStreamChannelParam = -44,   /**< 读取传输接口参数失败 */
+    ERR_StartTransmit = -45,            /**< 开启传输失败 */
+    ERR_StopTransmit = -46,             /**< 停止传输失败 */
+    ERR_OpenShortTest = -47,            /**< 开短路测试失败 */
+    ERR_ReadCurrent = -48,              /**< 读电流失败 */
+    ERR_Overcurrent = -49,              /**< 过流 */
+    ERR_Beep = -50,                     /**< 设置蜂鸣失败 */
+    ERR_VideoDequeuTimeout = -51,       /**< 视频帧获取超时 */
+    ERR_EmptyBufferPool = -52,          /**< 视频帧为空 */
+    ERR_DeviceOffline = -53,            /**< 设备离线 */
+    ERR_SetSpiParameter = -54,          /**< SPI参数失败 */
+    ERR_SpiTransfer = -55,              /**< SPI传输失败 */
+    ERR_ConnectFailed = -56,            /**< 连接错误 */
+    ERR_SocketIO = -57,                 /**< 通信套件字错误 */
+    ERR_InvalidProtPacket = -58,        /**< 无效协议包 */
+    ERR_SetExtendPower = -59,           /**< 设置拓展引脚电源失败 */ //no use
+    ERR_VideoNoDevice = -60,            /**< 开图时无设备 *///no use
+    ERR_VideoCritical = -61,            /**< 开图无效 *///no use
+    ERR_SetVideoParam = -62,            /**< 设置开图参数错误 */ //no use
+    ERR_Hardware = -63,                 /**< 硬件错误 */ //no use
+    ERR_CreatAsyncThreadFailed = -64,   /**< 创建异步线程失败 */ //no use
+    ERR_AsyncStateError = -65,          /**< 设置异步状态异常 */  //no use
+    ERR_Firmware = -100,                /**< 固件错误 */
 };
 
 
@@ -516,5 +555,11 @@ struct T_CalcAverageImageAsyncContext
     }m_tAverageImageFrame;
 };
 
+enum E_VirtualChannelFlag {
+    VC_0 = (1 << 0),
+    VC_1 = (1 << 1),
+    VC_2 = (1 << 2),
+    VC_3 = (1 << 3),
+};
 
 #endif // __CMTIDEFS_H__

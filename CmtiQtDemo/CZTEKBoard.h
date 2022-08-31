@@ -2,6 +2,7 @@
 #define __CZTEKBOARD_H__
 
 #include <QList>
+#include "CmtiDefs.h"
 
 struct TSensorSetting;
 class CZTEKBoard
@@ -160,6 +161,8 @@ public:
     * @return int 错误码
     */
     bool fnStandbyOffset(int nSocIndex, QList<float>& reading);
+
+    bool fnGetBoardInfo(int nSocIndex, T_BoardInfo& boardInfo);
 
 private:
     bool enterStandbyMode(int nSocIndex);

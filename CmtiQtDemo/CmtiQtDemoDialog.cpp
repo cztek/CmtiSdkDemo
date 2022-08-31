@@ -20,6 +20,7 @@ CmtiQtDemoDialog::CmtiQtDemoDialog(QWidget *parent)
     connect(ui.btnLoadSettingFile, &QPushButton::clicked, this, &CmtiQtDemoDialog::btnLoadSettingFile_clicked);
     connect(ui.btnOpen, &QPushButton::clicked, this, &CmtiQtDemoDialog::btnOpen_clicked);
     connect(ui.btnClose, &QPushButton::clicked, this, &CmtiQtDemoDialog::btnClose_clicked);
+    connect(ui.btnReadCurrentCaliOffset, &QPushButton::clicked, this, &CmtiQtDemoDialog::btnReadCurrentCaliOffset_clicked);
     connect(ui.btnTest, &QPushButton::clicked, this, &CmtiQtDemoDialog::btnTest_clicked);
 }
 
@@ -129,6 +130,140 @@ void CmtiQtDemoDialog::btnClose_clicked()
             return;
         }
         writeLog(QString("Closed(%1).").arg(nSocketIndex), LogLevel_Info);
+    }
+}
+
+void CmtiQtDemoDialog::btnReadCurrentCaliOffset_clicked()
+{
+    QList<QTableWidgetItem*> items = ui.tableWidgetDevice->selectedItems();
+    if (items.size() == ui.tableWidgetDevice->columnCount()) // select a row
+    {
+        int nSocketIndex = items[0]->data(Qt::EditRole).toInt();
+        QString qsDevName = items[1]->text();
+        writeLog(QString("Bind...(%1, %2)").arg(nSocketIndex).arg(qsDevName), LogLevel_Info);
+        m_pCztekBoard->BindSocket(nSocketIndex, qsDevName);
+
+        writeLog(QString("Read Calibration I Offset...(%1)").arg(nSocketIndex), LogLevel_Info);
+        QList<float> currentVal;
+        if (m_pCztekBoard->fnDynamicOffset(nSocketIndex, currentVal))
+        {
+            int offset = 0;
+            enum {
+                CURRENT_BOARD_ID_83X = 0x8310,
+                CURRENT_BOARD_ID_81X = 0x8110,
+                CURRENT_BOARD_ID_ATE_811S = 0x8010,
+                CURRENT_BOARD_ID_7DPS = 0x8320,
+                CURRENT_BOARD_ID_500_TOF = 0x5210,
+                CURRENT_BOARD_ID_CZCS821 = 0x8020,
+            };
+            T_BoardInfo boardInfo;
+            m_pCztekBoard->fnGetBoardInfo(nSocketIndex, boardInfo);
+            if ((CURRENT_BOARD_ID_ATE_811S == boardInfo.CurrentBoardId) || (CURRENT_BOARD_ID_CZCS821 == boardInfo.CurrentBoardId))
+            {
+                QVector<QString> vecPowerName;
+                int32_t powerIdBit = boardInfo.PowerIdBit;
+                if (powerIdBit & 1)
+                {
+                    vecPowerName.append("DVDD_5uA");
+                    vecPowerName.append("DVDD_25uA");
+                    vecPowerName.append("DVDD_250uA");
+                    vecPowerName.append("DVDD_2.5mA");
+                    vecPowerName.append("DVDD_25mA");
+                    vecPowerName.append("DVDD_500mA");
+                    vecPowerName.append("DVDD_1.2A");
+                }
+                if (powerIdBit & 2)
+                {
+                    vecPowerName.append("AVDD_5uA");
+                    vecPowerName.append("AVDD_25uA");
+                    vecPowerName.append("AVDD_250uA");
+                    vecPowerName.append("AVDD_2.5mA");
+                    vecPowerName.append("AVDD_25mA");
+                    vecPowerName.append("AVDD_500mA");
+                    vecPowerName.append("AVDD_1.2A");
+                }
+                if (powerIdBit & 4)
+                {
+                    vecPowerName.append("DOVDD_5uA");
+                    vecPowerName.append("DOVDD_20uA");
+                    vecPowerName.append("DOVDD_200uA");
+                    vecPowerName.append("DOVDD_2mA");
+                    vecPowerName.append("DOVDD_80mA");
+                    vecPowerName.append("DOVDD_NC1");
+                    vecPowerName.append("DOVDD_NC2");
+                }
+                if (powerIdBit & 8)
+                {
+                    vecPowerName.append("AFVCC_5uA");
+                    vecPowerName.append("AFVCC_25uA");
+                    vecPowerName.append("AFVCC_250uA");
+                    vecPowerName.append("AFVCC_2.5mA");
+                    vecPowerName.append("AFVCC_25mA");
+                    vecPowerName.append("AFVCC_500mA");
+                    vecPowerName.append("AFVCC_1.2A");
+                }
+                if (powerIdBit & 16)
+                {
+                    vecPowerName.append("VPP_5uA");
+                    vecPowerName.append("VPP_25uA");
+                    vecPowerName.append("VPP_250uA");
+                    vecPowerName.append("VPP_2.5mA");
+                    vecPowerName.append("VPP_25mA");
+                    vecPowerName.append("VPP_500mA");
+                    vecPowerName.append("VPP_1.2A");
+                }
+                if (powerIdBit & 32)
+                {
+                    vecPowerName.append("AVDD2_5uA");
+                    vecPowerName.append("AVDD2_25uA");
+                    vecPowerName.append("AVDD2_250uA");
+                    vecPowerName.append("AVDD2_2.5mA");
+                    vecPowerName.append("AVDD2_25mA");
+                    vecPowerName.append("AVDD2_500mA");
+                    vecPowerName.append("AVDD2_1.2A");
+                }
+                if (powerIdBit & 64)
+                {
+                    vecPowerName.append("VOIS_5uA");
+                    vecPowerName.append("VOIS_20uA");
+                    vecPowerName.append("VOIS_200uA");
+                    vecPowerName.append("VOIS_2mA");
+                    vecPowerName.append("VOIS_80mA");
+                    vecPowerName.append("VOIS_NC1");
+                    vecPowerName.append("VOIS_NC2");
+                }
+                if (powerIdBit & 128)
+                {
+                    vecPowerName.append("VAUX_5uA");
+                    vecPowerName.append("VAUX_20uA");
+                    vecPowerName.append("VAUX_200uA");
+                    vecPowerName.append("VAUX_2mA");
+                    vecPowerName.append("VAUX_80mA");
+                    vecPowerName.append("VAUX_NC1");
+                    vecPowerName.append("VAUX_NC2");
+                }
+
+                for (int i = 0; i < vecPowerName.size(); i++)
+                {
+                    writeLog(QString("%1: %2 nA").arg(vecPowerName[i]).arg(currentVal[i]), LogLevel_Info);
+                }
+            }
+            else
+            {
+                QString names[] =
+                {
+                    "DVDD_mA", "DOVDD_mA", "AVDD_mA", "AFVCC_mA", "VPP_mA",
+                    "DVDD_uA", "DOVDD_uA", "AVDD_uA", "AFVCC_uA", "VPP_uA",
+                    "DVDD_nA", "DOVDD_nA", "AVDD_nA", "AFVCC_nA", "VPP_nA",
+                    "AVDD2_mA", "AVDD2_uA", "AVDD2_nA", "VOIS", "VOIS_uA", "VOIS_nA",
+                    "VAUX", "VAUX_uA", "VAUX_nA"
+                }; // accroding to sequence of driver
+                for (uint32_t i = 0; i < (boardInfo.PowerDomainsNum + 1) * 3; i++)
+                {
+                    writeLog(QString("%1: %2 nA").arg(names[i]).arg(currentVal[i]), LogLevel_Info);
+                }
+            }
+        }
     }
 }
 

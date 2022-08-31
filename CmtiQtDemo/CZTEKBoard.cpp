@@ -57,7 +57,7 @@ bool CZTEKBoard::fnPowerOnCanyouPinVoltSet(int nSocIndex)
     if (devCli == nullptr)
         return false;
     // 1. 上电
-#if 0 // 推荐方式：所有电压一次下发，时序按前后顺序
+#if 1 // 推荐方式：所有电压一次下发，时序按前后顺序
     std::vector<T_Power> powerList;
     int count = m_pSensorSetting->PowerCount;
     for (int i = 0; i < count; i++)
@@ -452,6 +452,25 @@ bool CZTEKBoard::fnDynamicOffset(int nSocIndex, QList<float>& reading)
     if (devCli == nullptr)
         return false;
 
+    int nPowerCount = m_pSensorSetting->PowerCount;
+    std::unique_ptr<uint32_t[]> powerId(new uint32_t[nPowerCount]());
+    std::unique_ptr<uint32_t[]> voltage_mV(new uint32_t[nPowerCount]());
+    std::unique_ptr<uint32_t[]> delay_ms(new uint32_t[nPowerCount]());
+    for (int i = 0; i < nPowerCount; i++)
+    {
+        powerId[i] = m_pSensorSetting->Powers[i].Id;
+        voltage_mV[i] = m_pSensorSetting->Powers[i].Value;
+        delay_ms[i] = m_pSensorSetting->Powers[i].Delay_ms;
+    }
+    int nCurrent_nA[64], nCurrentCount = 64; // 最多有Power_MaxPowerCount * 7数据
+    int ec = devCli->ReadCurrentCalibrationOffset(powerId.get(), voltage_mV.get(), delay_ms.get(), nPowerCount, nCurrent_nA, nCurrentCount);
+    if (ERR_NoError == ec)
+    {
+        for (int i = 0; i < nCurrentCount; i++)
+            reading << nCurrent_nA[i];
+        return true;
+    }
+
     return false;
 }
 
@@ -475,7 +494,7 @@ bool CZTEKBoard::fnStandbyReading(int nSocIndex, QList<float>& reading)
     for (int i = 0; i < count; i++)
     {
         pPowerId[i] = m_pSensorSetting->Powers[i].Id;
-        pUpperLimitCurrent_nA[i] = 1000 * 1000; // 电流上限值，对于上限以内的测量值会更精准，超出上限的值误差会较大。
+        pUpperLimitCurrent_nA[i] = 1000 * 1000; // 电流上限值，对于上限以内的测量值会更精准，超出上限的值误差会较大
         pAutoHighPrecision[i] = 1;              // 各类型电流自动匹配高精度标志，0：不匹配，1：向下匹配高精度
     }
 
@@ -497,14 +516,37 @@ bool CZTEKBoard::fnStandbyOffset(int nSocIndex, QList<float>& reading)
     if (devCli == nullptr)
         return false;
 
-    // 进入静态状态
-    bool bFlag = enterStandbyMode(nSocIndex);
-    if (!bFlag)
-        return bFlag;
-
-    // 读Offset
+    int nPowerCount = m_pSensorSetting->PowerCount;
+    std::unique_ptr<uint32_t[]> powerId(new uint32_t[nPowerCount]());
+    std::unique_ptr<uint32_t[]> voltage_mV(new uint32_t[nPowerCount]());
+    std::unique_ptr<uint32_t[]> delay_ms(new uint32_t[nPowerCount]());
+    for (int i = 0; i < nPowerCount; i++)
+    {
+        powerId[i] = m_pSensorSetting->Powers[i].Id;
+        voltage_mV[i] = m_pSensorSetting->Powers[i].Value;
+        delay_ms[i] = m_pSensorSetting->Powers[i].Delay_ms;
+    }
+    int nCurrent_nA[64], nCurrentCount = 64; // 最多有Power_MaxPowerCount * 7数据
+    int ec = devCli->ReadCurrentCalibrationOffset(powerId.get(), voltage_mV.get(), delay_ms.get(), nPowerCount, nCurrent_nA, nCurrentCount);
+    if (ERR_NoError == ec)
+    {
+        for (int i = 0; i < nCurrentCount; i++)
+            reading << nCurrent_nA[i];
+        return true;
+    }
 
     return false;
+}
+
+bool CZTEKBoard::fnGetBoardInfo(int nSocIndex, T_BoardInfo& boardInfo)
+{
+    DeviceClient* devCli = DeviceController::Instance()[nSocIndex];
+    if (devCli == nullptr)
+        return false;
+
+    int ec = devCli->GetBoardInfo(boardInfo);
+
+    return (ERR_NoError == ec);
 }
 
 bool CZTEKBoard::enterStandbyMode(int nSocIndex)

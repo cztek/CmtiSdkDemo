@@ -99,6 +99,13 @@ public:
     int ProbeI2cAddress(uint8_t u8I2cAddr[], int& nCount);
 
     /**
+     * @brief 获取硬件板卡信息
+     * @param boardInfo 板卡信息
+     * @return 错误码
+    */
+    int GetBoardInfo(T_BoardInfo& boardInfo);
+
+    /**
     * @brief 写单个I2C寄存器
     *
     * @param i2cAddr I2C从地址
@@ -539,6 +546,15 @@ public:
      */
     int GetCurrentV2(const int powerIds[], const int upperLimit[], const uint16 atuoHighPrecision[],
                      float current_nA[], int count);
+
+    /**
+     * @brief 读电流校正Offset
+     * @param[in] nCurrent_nA[] 电流校正后的Offset
+     * @param[in, out] nCount 输入输出参数，输入时表示要读取的电源路数，输出时表示实际读取的电源路数
+     * @return 错误码
+    */
+    int ReadCurrentCalibrationOffset(const uint32_t powerId[], const uint32_t voltage_mV[], const uint32_t delay_ms[], uint32_t nPowerCount,
+            int nCurrent_nA[], int& nCurrentCount);
 
     /**
     * @brief 设置过流参数

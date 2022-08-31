@@ -128,7 +128,9 @@ extern "C" {
         * @param count 引脚个数，以上3个数组的长度
         * @return int 错误码
         */
-        CMTISDK_API int Cmti_GetPowerPinInfo(HDeviceClient dev, int pinName[], int voltLowerLimit[], int voltUpperLimit[], int count);
+        CMTISDK_API int Cmti_GetPowerPinInfo(HDeviceClient hDevCli, int pinName[], int voltLowerLimit[], int voltUpperLimit[], int count);
+
+        CMTISDK_API int Cmti_GetBoardInfo(HDeviceClient hDevCli, T_BoardInfo *boardInfo);
         
         /**
         * @brief 复位设备（主要是关闭传输和影像）
@@ -160,7 +162,7 @@ extern "C" {
         * @brief 获取接收帧率FPS（接收端SDK统计）
         *
         * @param hDevCli 设备
-        * @param fps 传输帧率FPS
+        * @param fps 接受帧率FPS
         * @return int 错误码
         */
         CMTISDK_API int Cmti_GetReceiveFps(HDeviceClient hDevCli, float *fps);
@@ -333,20 +335,20 @@ extern "C" {
         *
         * @param laneNum Mipi Lanes
         * @param freqMHz Mipi时钟，默认800MHz
-        * @param virtualChannel Mipi虚拟通道，默认0
+        * @param vcFlag 表示VideoCntrol打开的通道，参考枚举E_VirtualChannelFlag。使用方式：(VC_1|VC_2)
         * @return int 错误码
         */
-        CMTISDK_API int Cmti_SetMipiParam(HDeviceClient hDevCli, uint32_t laneNum, uint32_t freqMHz, uint32_t virtualChannel);
+        CMTISDK_API int Cmti_SetMipiParam(HDeviceClient hDevCli, uint32_t laneNum, uint32_t freqMHz, uint32_t vcFlag);
         /**
         * @brief 读Mipi参数
         *
         * @param chnIdx 视频通道索引
         * @param laneNum Mipi Lanes
         * @param freqMHz Mipi时钟
-        * @param virtualChannel Mipi虚拟通道
+        * @param vcFlag 表示VideoCntrol打开的通道，0x01:VC0，0x02:VC1，0x03:VC0、1，0x04:VC2，0x08:VC3
         * @return int 错误码
         */
-        CMTISDK_API int Cmti_GetMipiParam(HDeviceClient hDevCli, uint32_t *laneNum, uint32_t *freqMHz, uint32_t *virtualChannel);
+        CMTISDK_API int Cmti_GetMipiParam(HDeviceClient hDevCli, uint32_t *laneNum, uint32_t *freqMHz, uint32_t * vcFlag);
 
         /**
         * @brief 写Sensor GPIO值
@@ -462,13 +464,13 @@ extern "C" {
             uint32_t cropLeft, uint32_t cropTop, uint32_t cropWidth, uint32_t cropHeight);
 
         /**
-        * @brief 获取图像帧参数
+        * @brief 获取 虚拟通道0 的图像帧参数，注意：size为所有传输的虚拟通道图像size byte的总和。
         *
         * @param imgFmt 图像格式，参考E_ImageFormat定义
         * @param imgMode 图像模式，参考E_ImageMode定义
         * @param width 宽度
         * @param height 高度
-        * @param size 输出图像大小
+        * @param size 所有传输的虚拟通道图像size byte的总和。
         * @return int 错误码
         */
         CMTISDK_API int Cmti_GetFrameParam(HDeviceClient hDevCli, uint32_t *imgFmt, uint32_t *imgMode, uint32_t *width, uint32_t *height, uint32_t *size);
@@ -492,6 +494,16 @@ extern "C" {
         CMTISDK_API int Cmti_SetRoiParam(HDeviceClient hDevCli, const T_Rect roiRect[], uint32_t roiCount);
 
         /**
+        * @brief 设置ROI参数，支持热切换
+        *
+        * @param roiRects ROI矩形框定义，参考T_Rect定义。所有VC的Rect参数都在这个数组中。
+        * @param roiCounts ROI矩形框个数, roiCounts[0]表示VC0的roi区域数量，roiCounts[3]表示VC3的roi区域数量。
+        * @param reserved 保留参数，目前不使用。
+        * @return int 错误码
+        */
+        CMTISDK_API int Cmti_SetRoiParamByVC(HDeviceClient hDevCli, const T_Rect roiRect[], const uint32_t roiCount[], uint32_t reserved);
+
+        /**
         * @brief 设置Sensor自身的StreamOn寄存器
         * 当器件 i2cAddr、regAddr、regDataOn、regDataOff全都被设置为0时，表示清除此前设置数据
         *
@@ -513,13 +525,13 @@ extern "C" {
         CMTISDK_API int Cmti_VideoControl(HDeviceClient hDevCli, uint32_t ctrl);
 
         /**
-        * @brief 传输延时控制
+        * @brief 设置传输的包间延时
         *
-        * @param ctrl delay_ms 延时，单位ms
+        * @param ctrl delay_ns 延时，单位ns
         * @return int 错误码
         */
-        CMTISDK_API int Cmti_SetTransmitDelay(HDeviceClient hDevCli, uint32_t delay_ms);
-        CMTISDK_API int Cmti_GetTransmitDelay(HDeviceClient hDevCli, uint32_t *delay_ms);
+        CMTISDK_API int Cmti_SetTransmitDelay(HDeviceClient hDevCli, uint32_t delay_ns);
+        CMTISDK_API int Cmti_GetTransmitDelay(HDeviceClient hDevCli, uint32_t * delay_ns);
 
         /**
         * @brief 设置工装采集轮询超时时间，默认SDK轮询采集次数3次
@@ -544,7 +556,7 @@ extern "C" {
         * @param timestamp 时间戳
         * @return int 错误码
         */
-        CMTISDK_API int Cmti_GetSystemTimestamp(HDeviceClient hDevCli, uint64 *timestamp);
+        CMTISDK_API int Cmti_GetSystemTimestamp(HDeviceClient hDevCli, uint64_t *timestamp);
 
         /**
         * @brief 丢弃当前帧后的指定帧数。阻塞操作，函数在丢弃N帧后，有新帧到达时才返回。超时时间按设置的grabTimeout*N计算。
@@ -566,12 +578,12 @@ extern "C" {
         * @param frameSequence 帧序号
         * @return int 错误码
         */
-        CMTISDK_API int Cmti_GrabFrame(HDeviceClient hDevCli, uint8_t *pbuffer, int bufferLen, uint64 *timestamp);
-        CMTISDK_API int Cmti_GrabFrame2(HDeviceClient hDevCli, uint8_t *pbuffer, int bufferLen, uint64 *headTimestamp,
-            uint64 *tailTimestamp, uint32 *frameSequence);
-        CMTISDK_API int Cmti_GrabLatestFrame(HDeviceClient hDevCli, uint8_t *pbuffer, int bufferLen, uint64 *timestamp);
-        CMTISDK_API int Cmti_GrabLatestFrame2(HDeviceClient hDevCli, uint8_t *pbuffer, int bufferLen, uint64 *headTimestamp,
-            uint64 *tailTimestamp, uint32 *frameSequence);
+        CMTISDK_API int Cmti_GrabFrame(HDeviceClient hDevCli, uint8_t *pbuffer, int bufferLen, uint64_t *timestamp);
+        CMTISDK_API int Cmti_GrabFrame2(HDeviceClient hDevCli, uint8_t *pbuffer, int bufferLen, uint64_t *headTimestamp,
+            uint64_t *tailTimestamp, uint32_t *frameSequence);
+        CMTISDK_API int Cmti_GrabLatestFrame(HDeviceClient hDevCli, uint8_t *pbuffer, int bufferLen, uint64_t *timestamp);
+        CMTISDK_API int Cmti_GrabLatestFrame2(HDeviceClient hDevCli, uint8_t *pbuffer, int bufferLen, uint64_t *headTimestamp,
+            uint64_t *tailTimestamp, uint32_t *frameSequence);
 
         /**
         * @brief 从队列中取出一个Buffer(与EnqueueFrameBuffer配对使用)，使用缓冲池中的缓冲区，无需要用户分配内存
@@ -584,12 +596,12 @@ extern "C" {
         * @param frameSequence 帧序号
         * @return int 错误码
         */
-        CMTISDK_API int Cmti_DequeueFrameBuffer(HDeviceClient hDevCli, int *bufIdx, uint8_t **pbuffer, uint64 *timestamp);
-        CMTISDK_API int Cmti_DequeueFrameBuffer2(HDeviceClient hDevCli, int *bufIdx, uint8_t **pbuffer, uint64 *headTimestamp, 
-            uint64 *tailTimestamp, uint32 *frameSequence);
-        CMTISDK_API int Cmti_DequeueLatestFrameBuffer(HDeviceClient hDevCli, int *bufIdx, uint8_t **pbuffer, uint64 *timestamp);
-        CMTISDK_API int Cmti_DequeueLatestFrameBuffer2(HDeviceClient hDevCli, int *bufIdx, uint8_t **pbuffer, uint64 *headTimestamp,
-            uint64 *tailTimestamp, uint32 *frameSequence);
+        CMTISDK_API int Cmti_DequeueFrameBuffer(HDeviceClient hDevCli, int *bufIdx, uint8_t **pbuffer, uint64_t *timestamp);
+        CMTISDK_API int Cmti_DequeueFrameBuffer2(HDeviceClient hDevCli, int *bufIdx, uint8_t **pbuffer, uint64_t *headTimestamp, 
+            uint64_t *tailTimestamp, uint32_t *frameSequence);
+        CMTISDK_API int Cmti_DequeueLatestFrameBuffer(HDeviceClient hDevCli, int *bufIdx, uint8_t **pbuffer, uint64_t *timestamp);
+        CMTISDK_API int Cmti_DequeueLatestFrameBuffer2(HDeviceClient hDevCli, int *bufIdx, uint8_t **pbuffer, uint64_t *headTimestamp,
+            uint64_t *tailTimestamp, uint32_t *frameSequence);
 
         /**
         * @brief 入队一个Buffer(与DequeueFrameBuffer配对使用)
@@ -657,6 +669,15 @@ extern "C" {
         */
         CMTISDK_API int Cmti_GetCurrentV2(HDeviceClient hDevCli, const int powerId[], const int upperLimit_nA[], const uint16_t autoHighPrecision[],
             float current_nA[], int count);
+
+        /**
+         * @brief 读电流校正Offset
+         * @param[in] nCurrent_nA[] 电流校正后的Offset
+         * @param[in, out] nCurrentCount 输入输出参数，输入时表示要读取的电源路数，输出时表示实际读取的电源路数
+         * @return 错误码
+        */
+        CMTISDK_API int Cmti_ReadCurrentCalibrationOffset(HDeviceClient hDevCli, const uint32_t powerId[], const uint32_t voltage_mV[], const uint32_t delay_ms[], uint32_t nPowerCount,
+            int nCurrent_nA[], int* nCurrentCount);
 
         /**
         * @brief 设置过流参数
@@ -1251,7 +1272,6 @@ extern "C" {
         * */
         CMTISDK_API int32_t Cmti_GetPowerFixForceState(HDeviceClient hDevCli, const int32_t nPowerId[], int32_t nFix[], int32_t nCount);
 
-
         /**
         * @brief 写I2C后获取DPS所有采样点电流
         *
@@ -1271,6 +1291,57 @@ extern "C" {
         */
         CMTISDK_API int32_t Cmti_WriteICAndGetDpsAllSamplePointCurrent(HDeviceClient hDevCli, uint32_t i2cAddr, uint32_t speedkHz, uint32_t mode,const uint32_t regAddr[], const uint32_t regData[], 
             const uint32_t delay_ms[], int32_t regNum, int32_t powerId, int32_t currentRange, double current_nA[], int32_t nSampleInterval_us, int32_t nSamplePoint);
+			
+        /**
+        * @brief 分通道设置设备图像帧参数，在打开视频前需要设置图像帧参数，带Crop功能
+        *
+        * @param imgFmt 图像格式，参考E_ImageFormat定义
+        * @param imgMode 图像模式，参考E_ImageMode定义
+        * @param width 宽度
+        * @param height 高度
+        * @param outImgFmt 输出图像格式，参考E_ImageFormat定义（可定制采集的输出格式，如ImgFmt_RAW8, ImgFmt_PackedRaw10...）
+        * @param cropLeft 剪裁区域x坐标
+        * @param cropTop 剪裁区域y坐标Cmti_GetFrameParam
+        * @param cropWidth 剪裁区域宽度
+        * @param cropHeight 剪裁区域高度
+        * @param vcIdx 控制虚拟通道的index，取值范围[0,3]
+        * @return int 错误码
+        */
+        CMTISDK_API int Cmti_SetFrameParamByVC(HDeviceClient hDevCli, uint32_t imgFmt, uint32_t imgMode, uint32_t width, uint32_t height, uint32_t outImgFmt,
+            uint32_t cropLeft, uint32_t cropTop, uint32_t cropWidth, uint32_t cropHeight, int vcIdx);
+
+        /**
+        * @brief 获取 虚拟通道0 的图像帧参数，注意：size为所有传输的虚拟通道图像size byte的总和。
+        *
+        * @param imgFmt 图像格式，参考E_ImageFormat定义
+        * @param imgMode 图像模式，参考E_ImageMode定义
+        * @param width 宽度
+        * @param height 高度
+        * @param size 所有传输的虚拟通道图像size byte的总和。
+        * @param vcIdx 控制虚拟通道的index，取值范围[0,3]
+        * @return int 错误码
+        */
+        CMTISDK_API int Cmti_GetFrameParamByVC(HDeviceClient hDevCli, uint32_t* imgFmt, uint32_t* imgMode, uint32_t* width, uint32_t* height, uint32_t* size, int vcIdx);
+
+        /**
+        * @brief 获取图像帧参数
+        *
+        * @param T_FrameParam 图像帧参数指针
+        * @param count 从虚拟通道0开始按顺序请求count个虚拟通道的参数，返回底层支持的最大虚拟通道个数
+        * @param vcFlag 返回实际打开的虚拟通道 0x01:VC0，0x02:VC1，0x03:VC0、1，0x04:VC2，0x08:VC3
+        * @return int 错误码
+        */
+        CMTISDK_API int Cmti_GetFrameParamsAllVC(HDeviceClient hDevCli, T_FrameParam* frameParams, int* count, uint32_t* vcFlag);
+
+        /**
+        * @brief 设置MIPI Embedded Line Size
+        *
+        * @param hDevCli 设备对象句柄
+        * @param size Embedded line size
+        * @param vcIdx 控制虚拟通道的index，取值范围[0,3]
+        * @return int 错误码
+        */
+        CMTISDK_API int Cmti_SetEmbeddedLineSizeByVC(HDeviceClient hDevCli, uint32_t size, int vcIdx);
 
         /**
         * @brief 设置MIPI引脚漏电流校正状态
